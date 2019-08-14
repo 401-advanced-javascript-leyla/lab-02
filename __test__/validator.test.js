@@ -1,77 +1,147 @@
 'use strict';
 
-// Vinicio - this is similar to module.exports = {};, but you are giving it an easier to use name
-let validator = module.exports = {};
+const Validator = require('./validator');
 
-/**
- * Based on a set of rules, is the input valid?
- * TODO: Define the rules ... how do we send them in? How do we identify?
- * @param input
- * @param rules
- * @returns {boolean}
- */
+//some example for testing
+let str = 'yes';
+let num = 1;
+let negativeNum = -1;
+let positiveNum = 1;
+let zero = 0;
+let arr = ['a'];
+let obj = {x:'y'};
+let func = () => {};
+let bool = false;
+let emptyStr = '';
+let validArr = [1,2,3];
+let badArr = [1,'hello','bye'];
 
 
-// Ideas for rules : Positive values / Negative values / odd values / even values /
-// specific values / bigger than five /
-
-// if the person object has hair property
-validator.hasProperty = (person,property) => {
-  return person.hasOwnProperty(property);
+//example to test a complex object problem
+const schema = {
+  fields: {
+    firstName: {type: 'string'},
+    lastName: {type: 'string'},
+    hair: {type: 'object'},
+    favoriteFoods: {type: 'array', valueType: 'string'},
+    married: {type: 'boolean'},
+    kids: {type: 'number'},
+  },
 };
 
-/**
- * Is this a string?
- * @param input
- * @returns {boolean}
- */
-validator.isString = (input) => {
-  return typeof input === 'string';
-};
+//create a new instance of the validator class
+const validator = new Validator(schema);
 
-/**
- * Is this a number?
- * @param input
- * @returns {boolean}
- */
+describe('validator module performs basic validation of', () => {
+  it('strings', () => {
+    expect(validator.isString(str)).toBeTruthy();
+    expect(validator.isString(num)).toBeFalsy();
+    expect(validator.isString(arr)).toBeFalsy();
+    expect(validator.isString(obj)).toBeFalsy();
+    expect(validator.isString(func)).toBeFalsy();
+    expect(validator.isString(bool)).toBeFalsy();
+  });
 
-validator.isNumber = (input) =>{
-  return typeof input === 'number';
-};
+  it('objects', () => {
+    expect(validator.isObject(negativeNum)).toBeFalsy();
+    expect(validator.isObject(positiveNum)).toBeFalsy();
+    expect(validator.isObject(arr)).toBeTruthy();
+    expect(validator.isObject(obj)).toBeTruthy();
+    expect(validator.isObject(func)).toBeFalsy();
+    expect(validator.isObject(bool)).toBeFalsy();
+  });
 
 
-/**
- * Is this a object?
- * @param input
- * @returns {boolean}
- */
+  it('arrays', () => {
+    expect(validator.isArray(validArr,'number')).toBeTruthy();
+    expect(validator.isArray(validArr,'string')).toBeFalsy();
+    expect(validator.isArray(badArr,'number')).toBeFalsy();
+    expect(validator.isArray(badArr,'string')).toBeFalsy();
 
-validator.isObject = (input) =>{
-  return typeof input === 'object';
-};
+  });
 
-/**
- * Is this a array?
- * @param input
- * @returns {boolean}
- */
+  it('booleans', () => {
+    expect(validator.isBoolean(negativeNum)).toBeFalsy();
+    expect(validator.isBoolean(positiveNum)).toBeFalsy();
+    expect(validator.isBoolean(zero)).toBeFalsy();
+    expect(validator.isBoolean(arr)).toBeFalsy();
+    expect(validator.isBoolean(obj)).toBeFalsy();
+    expect(validator.isBoolean(func)).toBeFalsy();
+    expect(validator.isBoolean(bool)).toBeTruthy();
+  });
 
-validator.isArray = (input) =>{
-  return Array.isArray(input);
-};
+  it('numbers', () => {
+    expect(validator.isNumber(negativeNum)).toBeTruthy();
+    expect(validator.isNumber(positiveNum)).toBeTruthy();
+    expect(validator.isNumber(zero)).toBeTruthy();
+    expect(validator.isNumber(arr)).toBeFalsy();
+    expect(validator.isNumber(obj)).toBeFalsy();
+    expect(validator.isNumber(func)).toBeFalsy();
+    expect(validator.isNumber(bool)).toBeFalsy();
+  });
 
-/**
- * Is this a negative number?
- * @param input
- * @returns {boolean}
- */
+  it('functions', () => {
+    expect(validator.isFunction(negativeNum)).toBeFalsy();
+    expect(validator.isFunction(positiveNum)).toBeFalsy();
+    expect(validator.isFunction(zero)).toBeFalsy();
+    expect(validator.isFunction(arr)).toBeFalsy();
+    expect(validator.isFunction(obj)).toBeFalsy();
+    expect(validator.isFunction(func)).toBeTruthy();
+    expect(validator.isFunction(bool)).toBeFalsy();
+  });
 
-validator.notZero = (num,check) =>{
-  if(check === 'negative' && num < 0){
-    return true;
-  }else if(check === 'positive' && num > 0){
-    return true;
-  }else{
-    return false;
+  it('is truthy', () =>{
+    expect(validator.isTruthy(negativeNum)).toBeTruthy();
+    expect(validator.isTruthy(positiveNum)).toBeTruthy();
+    expect(validator.isTruthy(zero)).toBeFalsy();
+    expect(validator.isTruthy(emptyStr)).toBeFalsy();
+    expect(validator.isTruthy(func)).toBeTruthy();
+    expect(validator.isTruthy(bool)).toBeFalsy();
   }
-};
+
+  );
+
+
+});
+
+describe('validator module performs complex validations', () => {
+
+  it('validates the presence of required object properties at any level', () => {
+    let person1 = {
+      firstName: 'Fred',
+      lastName: 'Sample',
+      hair: {
+        type: 'wavy',
+        color: 'brown',
+      },
+      favoriteFoods: ['pizza','cupcakes','salmon'],
+      married: true,
+      kids: 3,
+    };
+    let person2 = {
+      firstName: 'Fred',
+      lastName: 'Sample',
+      favoriteFoods: ['pizza','cupcakes','salmon'],
+      married: true,
+      kids: 3,
+    };
+    let person3 = {
+      firstName: 'Fred',
+      lastName: 'Sample',
+      hair: {
+        type: 'curly',
+        color: 'brown',
+      },
+      favoriteFoods: ['pizza','cupcakes','salmon'],
+      married: 'yes',
+      kids: 3,
+    };
+    //does a person has all the right keys and properties?
+    //expect(validator.isValid(person1,schema)).toBeTruthy();
+    //expect(validator.isValid(person2,schema)).toBeFalsy();
+    expect(validator.isValid(person3,schema)).toBeFalsy();
+  });
+
+
+
+});
